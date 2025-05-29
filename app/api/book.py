@@ -1,0 +1,85 @@
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from sqlalchemy.orm import Session
+from app import core
+from app.schemas.book import Book, BookCreate
+from typing import Optional
+from app.controllers.book import (
+    create_book, get_books, get_book,
+    update_book as update_book_controller,
+    delete_book as delete_book_controller
+)
+
+router = APIRouter(prefix="/books", tags=["Books"])
+
+
+@router.post("/")
+async def save_book(
+    title: str = Form(...),
+    author: str = Form(...),
+    isbn: str = Form(...),
+    library_id: int = Form(...),
+    description: Optional[str] = Form(None),
+    cover_image: Optional[UploadFile] = File(None),
+    db: Session = Depends(core.deps.get_db)
+):
+    cover_image_base64 = None
+    if cover_image:
+        image_bytes = await cover_image.read()
+        import base64
+        cover_image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+    book_data = {
+        "title": title,
+        "author": author,
+        "isbn": isbn,
+        "description": description,
+        "library_id": library_id,
+        "cover_image": cover_image_base64,
+    }
+
+    return create_book(db, book_data)
+
+
+@router.get("/", response_model=list[Book])
+def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db)):
+    return get_books(db, skip=skip, limit=limit)
+
+
+@router.get("/{book_id}", response_model=Book)
+def read_book(book_id: int, db: Session = Depends(core.deps.get_db)):
+    db_book = get_book(db, book_id)
+    if not db_book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return db_book
+
+
+@router.put("/{book_id}", response_model=Book)
+async def update_book(
+    book_id: int, title: str = Form(...),
+    author: str = Form(...),
+    isbn: str = Form(...),
+    library_id: int = Form(...),
+    description: Optional[str] = Form(None),
+    cover_image: Optional[UploadFile] = File(None),
+    db: Session = Depends(core.deps.get_db)
+):
+    cover_image_base64 = None
+    if cover_image:
+        image_bytes = await cover_image.read()
+        import base64
+        cover_image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+    book_data = {
+        "title": title,
+        "author": author,
+        "isbn": isbn,
+        "description": description,
+        "library_id": library_id,
+        "cover_image": cover_image_base64,
+    }
+    return update_book_controller(db, book_id, book_data)
+
+
+@router.delete("/{book_id}")
+def delete_book(book_id: int, db: Session = Depends(core.deps.get_db)):
+    return delete_book_controller(db, book_id)
