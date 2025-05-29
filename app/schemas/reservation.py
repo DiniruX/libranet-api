@@ -1,0 +1,21 @@
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class ReservationBase(BaseModel):
+    library_id: int
+    user_id: int
+    reservation_from: datetime
+    reservation_to: datetime
+    book_ids: list[int] 
+    status: str  # pending, confirmed, cancelled
+
+class ReservationCreate(ReservationBase):
+    pass
+
+class Reservation(ReservationBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
