@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import controllers, core
+from app import core
 from app.schemas.library import Library, LibraryCreate
 from app.controllers.library import create_library, get_libraries, get_library, update_library as update_library_controller, delete_library as delete_library_controller
 
