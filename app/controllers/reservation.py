@@ -11,7 +11,6 @@ def create_reservation(db: Session, reservation: ReservationCreate, user_id: int
     existing_reservation = db.query(Reservation).filter(
         Reservation.user_id == reservation.user_id,
         Reservation.library_id == reservation.library_id,
-        # Checks if any book ID exists in the stored text
         Reservation.book_ids.ilike(f"%{reservation.book_ids[0]}%")
     ).first()
     if existing_reservation:
@@ -19,6 +18,22 @@ def create_reservation(db: Session, reservation: ReservationCreate, user_id: int
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A reservation for this user, library, and book(s) already exists."
         )
+    
+    library_reservations = db.query(Reservation).filter(
+        Reservation.library_id == reservation.library_id,
+        Reservation.status.in_(["pending", "confirmed"]),
+        Reservation.reservation_from <= reservation.reservation_from
+    ).all()
+    reserved_book_ids = set()
+    for lib_reservation in library_reservations:
+        reserved_book_ids.update(map(int, lib_reservation.book_ids.split(",")))
+    for book_id in reservation.book_ids:
+        if book_id in reserved_book_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Book ID {book_id} is already reserved in library {reservation.library_id} for the selected dates."
+            )
+
     db_reservation = Reservation(
         user_id=reservation.user_id,
         library_id=reservation.library_id,
