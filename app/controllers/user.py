@@ -4,6 +4,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate
 from app.utils.security import hash_password, verify_password
 from app.core.jwt import create_access_token
+from app.controllers.actionLog import create_action_log
 
 
 def create_user(db: Session, user: UserCreate):
@@ -25,6 +26,15 @@ def create_user(db: Session, user: UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    db_user_created = db.query(User).filter(User.email == user.email).first()
+
+    action_log = {
+        "user_id": db_user_created.id,
+        "action": f"Created user: {db_user_created.name}"
+    }
+    create_action_log(db, action_log)
+
     return db_user
 
 
@@ -36,7 +46,7 @@ def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
 
-def update_user(db: Session, user_id: int, user: UserCreate):
+def update_user(db: Session, user_id: int, user: UserCreate, current_user_id: int):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(
@@ -48,14 +58,28 @@ def update_user(db: Session, user_id: int, user: UserCreate):
             setattr(db_user, key, value)
         db.commit()
         db.refresh(db_user)
+
+    action_log = {
+        "user_id": current_user_id,
+        "action": f"Updated user: {db_user.name}"
+    }
+    create_action_log(db, action_log)
+
     return db_user
 
 
-def delete_user(db: Session, user_id: int):
+def delete_user(db: Session, user_id: int, current_user_id: int):
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user:
         db.delete(db_user)
         db.commit()
+
+    action_log = {
+        "user_id": current_user_id,
+        "action": f"Deleted user: {db_user.name}"
+    }
+    create_action_log(db, action_log)
+
     return db_user
 
 
@@ -72,5 +96,14 @@ def user_login(db: Session, email: str, password: str):
             detail="Invalid email or password."
         )
     token = create_access_token(data={"sub": str(user.id)})
-    return {"user": user, "access_token": token, "token_type": "bearer"}
+
+    action_log = {
+        "user_id": user.id,
+        "action": f"User logged in: {user.name}"
+    }
+    create_action_log(db, action_log)
+
+    print(f"User {user.name} logged in successfully.")
+
+    return {"access_token": token, "token_type": "bearer", "user": user}
 
