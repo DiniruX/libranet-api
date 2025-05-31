@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app import core
 from app.schemas.book import Book, BookCreate
 from typing import Optional
+from app.models.user import User as UserModel
+from app.core.deps import get_current_user
 from app.controllers.book import (
     create_book, get_books, get_book,
     update_book as update_book_controller,
@@ -17,10 +19,14 @@ async def save_book(
     title: str = Form(...),
     author: str = Form(...),
     isbn: str = Form(...),
+    genre: Optional[str] = Form(None),
+    status: str = Form("available"),
+    floor: Optional[int] = Form(None),
+    shelf: Optional[int] = Form(None),
     library_id: int = Form(...),
     description: Optional[str] = Form(None),
     cover_image: Optional[UploadFile] = File(None),
-    db: Session = Depends(core.deps.get_db)
+    db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)
 ):
     cover_image_base64 = None
     if cover_image:
@@ -32,6 +38,10 @@ async def save_book(
         "title": title,
         "author": author,
         "isbn": isbn,
+        "genre": genre,
+        "status": status,
+        "floor": floor,
+        "shelf": shelf,
         "description": description,
         "library_id": library_id,
         "cover_image": cover_image_base64,
@@ -41,12 +51,12 @@ async def save_book(
 
 
 @router.get("/", response_model=list[Book])
-def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db)):
+def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_books(db, skip=skip, limit=limit)
 
 
 @router.get("/{book_id}", response_model=Book)
-def read_book(book_id: int, db: Session = Depends(core.deps.get_db)):
+def read_book(book_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     db_book = get_book(db, book_id)
     if not db_book:
         raise HTTPException(status_code=404, detail="Book not found")
@@ -61,7 +71,7 @@ async def update_book(
     library_id: int = Form(...),
     description: Optional[str] = Form(None),
     cover_image: Optional[UploadFile] = File(None),
-    db: Session = Depends(core.deps.get_db)
+    db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)
 ):
     cover_image_base64 = None
     if cover_image:
@@ -81,5 +91,5 @@ async def update_book(
 
 
 @router.delete("/{book_id}")
-def delete_book(book_id: int, db: Session = Depends(core.deps.get_db)):
+def delete_book(book_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return delete_book_controller(db, book_id)
