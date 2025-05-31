@@ -47,7 +47,7 @@ async def save_book(
         "cover_image": cover_image_base64,
     }
 
-    return create_book(db, book_data)
+    return create_book(db, book_data, current_user.id)
 
 
 @router.get("/", response_model=list[Book])
@@ -87,9 +87,9 @@ async def update_book(
         "library_id": library_id,
         "cover_image": cover_image_base64,
     }
-    return update_book_controller(db, book_id, book_data)
+    return update_book_controller(db, book_id, book_data, current_user.id)
 
 
 @router.delete("/{book_id}")
 def delete_book(book_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return delete_book_controller(db, book_id)
+    return delete_book_controller(db, book_id, current_user.id)
