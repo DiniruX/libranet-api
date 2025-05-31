@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from app.models.reservation import Reservation
 from app.schemas.reservation import ReservationCreate
 from app.schemas.interLibReservations import interLibReservationCreate
-from app.controllers.interLibReservations import create_inter_lib_reservation, get_inter_lib_reservation_by_reservation_id, update_inter_lib_reservation
+from app.controllers.interLibReservations import create_inter_lib_reservation, get_inter_lib_reservation_by_reservation_id, update_inter_lib_reservation, delete_inter_lib_reservation
+from app.controllers.actionLog import create_action_log
 
 
-def create_reservation(db: Session, reservation: ReservationCreate):
+def create_reservation(db: Session, reservation: ReservationCreate, user_id: int):
     existing_reservation = db.query(Reservation).filter(
         Reservation.user_id == reservation.user_id,
         Reservation.library_id == reservation.library_id,
@@ -37,7 +38,13 @@ def create_reservation(db: Session, reservation: ReservationCreate):
             status='pending',
             logistic_status='pending'
         )
-        create_inter_lib_reservation(db, inter_lib_reservation)
+        create_inter_lib_reservation(db, inter_lib_reservation, user_id)
+    
+    action_log = {
+        "user_id": user_id,
+        "action": f"Created reservation for user {reservation.user_id} at library {reservation.library_id} for books {', '.join(map(str, reservation.book_ids))}"
+    }
+    create_action_log(db, action_log)
 
     return db_reservation
 
@@ -62,7 +69,7 @@ def get_reservation(db: Session, reservation_id: int):
     return db_reservation
 
 
-def update_reservation(db: Session, reservation_id: int, reservation: ReservationCreate):
+def update_reservation(db: Session, reservation_id: int, reservation: ReservationCreate, user_id: int):
     db_reservation = db.query(Reservation).filter(
         Reservation.id == reservation_id).first()
     if not db_reservation:
@@ -76,11 +83,18 @@ def update_reservation(db: Session, reservation_id: int, reservation: Reservatio
 
     db.commit()
     db.refresh(db_reservation)
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"Updated reservation {reservation_id} for user {reservation.user_id} at library {reservation.library_id} for books"
+    }
+    create_action_log(db, action_log)
+
     db_reservation.book_ids = db_reservation.book_ids.split(",")
     return db_reservation
 
 
-def delete_reservation(db: Session, reservation_id: int):
+def delete_reservation(db: Session, reservation_id: int, user_id: int):
     db_reservation = db.query(Reservation).filter(
         Reservation.id == reservation_id).first()
     if not db_reservation:
@@ -88,9 +102,21 @@ def delete_reservation(db: Session, reservation_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reservation not found."
         )
+    
+    inter_lib_reservation = get_inter_lib_reservation_by_reservation_id(
+        db, reservation_id)
+    if inter_lib_reservation:
+        delete_inter_lib_reservation(db, inter_lib_reservation.id, user_id)
 
     db.delete(db_reservation)
     db.commit()
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"Deleted reservation {reservation_id} for user {db_reservation.user_id} at library {db_reservation.library_id}"
+    }
+    create_action_log(db, action_log)
+
     return db_reservation
 
 
@@ -133,7 +159,7 @@ def get_book_reservations(db: Session, book_id: int, skip: int = 0, limit: int =
     return reservations
 
 
-def cancel_reservation(db: Session, reservation_id: int):
+def cancel_reservation(db: Session, reservation_id: int, user_id: int):
     db_reservation = db.query(Reservation).filter(
         Reservation.id == reservation_id).first()
     if not db_reservation:
@@ -158,11 +184,18 @@ def cancel_reservation(db: Session, reservation_id: int):
         update_inter_lib_reservation(
             db, inter_lib_reservation.id, reservation)
 
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"Cancelled reservation {reservation_id} for user {db_reservation.user_id} at library {db_reservation.library_id}"
+    }
+    create_action_log(db, action_log)
+
     db_reservation.book_ids = db_reservation.book_ids.split(",")
     return db_reservation
 
 
-def confirm_reservation(db: Session, reservation_id: int):
+def confirm_reservation(db: Session, reservation_id: int, user_id: int):
     db_reservation = db.query(Reservation).filter(
         Reservation.id == reservation_id).first()
     if not db_reservation:
@@ -174,6 +207,13 @@ def confirm_reservation(db: Session, reservation_id: int):
     db_reservation.status = "confirmed"
     db.commit()
     db.refresh(db_reservation)
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"Confirmed reservation {reservation_id} for user {db_reservation.user_id} at library {db_reservation.library_id}"
+    }
+    create_action_log(db, action_log)
+
     db_reservation.book_ids = db_reservation.book_ids.split(",")
     return db_reservation
 
