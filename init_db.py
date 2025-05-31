@@ -1,5 +1,5 @@
 # init_db.py
 from app.core.database import Base, engine
-from app.models import library, user, actionLog
+from app.models import library, user, book, reservation, interLibReservations, actionLog
 
 Base.metadata.create_all(bind=engine)
