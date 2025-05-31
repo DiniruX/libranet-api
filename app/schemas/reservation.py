@@ -8,7 +8,8 @@ class ReservationBase(BaseModel):
     reservation_from: datetime
     reservation_to: datetime
     book_ids: list[int] 
-    status: str  # pending, confirmed, cancelled
+    status: str 
+    from_library_id: Optional[int] = None  # For inter-library reservations
 
 class ReservationCreate(ReservationBase):
     pass
