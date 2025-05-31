@@ -10,7 +10,7 @@ router = APIRouter(prefix="/libraries", tags=["Libraries"])
 
 @router.post("/", response_model=Library)
 def save_library(library: LibraryCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return create_library(db, library)
+    return create_library(db, library, current_user.id)
 
 @router.get("/", response_model=list[Library])
 def read_libraries(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
@@ -25,8 +25,8 @@ def read_library(library_id: int, db: Session = Depends(core.deps.get_db), curre
 
 @router.put("/{library_id}", response_model=Library)
 def update_library(library_id: int, library: LibraryCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return update_library_controller(db, library_id, library)
+    return update_library_controller(db, library_id, library, current_user.id)
 
 @router.delete("/{library_id}")
 def delete_library(library_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return delete_library_controller(db, library_id)
+    return delete_library_controller(db, library_id, current_user.id)

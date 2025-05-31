@@ -35,9 +35,9 @@ def read_user(user_id: int, db: Session = Depends(core.deps.get_db), current_use
 
 @router.put("/{user_id}", response_model=User)
 def update_user(user_id: int, user: UserCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return update_user_controller(db, user_id, user)
+    return update_user_controller(db, user_id, user, current_user.id)
 
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return delete_user_controller(db, user_id)
+    return delete_user_controller(db, user_id, current_user.id)
