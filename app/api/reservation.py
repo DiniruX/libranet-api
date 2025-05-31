@@ -5,7 +5,7 @@ from app.schemas.reservation import Reservation, ReservationCreate
 from datetime import datetime
 from app.models.user import User as UserModel
 from app.core.deps import get_current_user
-from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller
+from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller, expire_reservations
 
 router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
@@ -14,14 +14,21 @@ router = APIRouter(prefix="/reservations", tags=["Reservations"])
 def save_reservation(reservation: ReservationCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     db_reservation = create_reservation(db, reservation)
     db_reservation.book_ids = db_reservation.book_ids.split(
-        ",") 
+        ",")
     return db_reservation
+
 
 @router.get("/date-range", response_model=list[Reservation])
 def read_reservations_by_date_range(start_date: str, end_date: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
     end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
     return get_reservations_by_date_range(db, start_date_dt, end_date_dt)
+
+
+@router.put("/expire", response_model=list[Reservation])
+def expire_reservations_endpoint(db: Session = Depends(core.deps.get_db)):
+    return expire_reservations(db)
+
 
 @router.get("/", response_model=list[Reservation])
 def read_reservations(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):

@@ -177,3 +177,28 @@ def get_reservations_by_date_range(db: Session, start_date: str, end_date: str, 
     for reservation in reservations:
         reservation.book_ids = reservation.book_ids.split(",")
     return reservations
+
+# need to make this endpoint a cronjob to run everyday at 8.00AM
+def expire_reservations(db: Session):
+    from datetime import datetime
+    now = datetime.now()
+    expired_reservations = db.query(Reservation).filter(
+        Reservation.reservation_from < now,
+        Reservation.status != "expired"
+    ).all()
+
+    for reservation in expired_reservations:
+        reservation.status = "expired"
+
+    db.commit()
+
+    expired_res_count = len(expired_reservations)
+    if expired_res_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No expired reservations found."
+        )
+    for reservation in expired_reservations:
+        reservation.book_ids = reservation.book_ids.split(",")
+
+    return expired_reservations
