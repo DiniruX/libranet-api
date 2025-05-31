@@ -2,6 +2,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.reservation import Reservation
 from app.schemas.reservation import ReservationCreate
+from app.schemas.interLibReservations import interLibReservationCreate
+from app.controllers.interLibReservations import create_inter_lib_reservation, get_inter_lib_reservation_by_reservation_id, update_inter_lib_reservation
 
 
 def create_reservation(db: Session, reservation: ReservationCreate):
@@ -16,11 +18,27 @@ def create_reservation(db: Session, reservation: ReservationCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A reservation for this user, library, and book(s) already exists."
         )
-
-    db_reservation = Reservation(**reservation.dict())
+    db_reservation = Reservation(
+        user_id=reservation.user_id,
+        library_id=reservation.library_id,
+        book_ids=",".join(map(str, reservation.book_ids)),
+        reservation_from=reservation.reservation_from,
+        reservation_to=reservation.reservation_to,
+        status=reservation.status,
+    )
     db.add(db_reservation)
     db.commit()
     db.refresh(db_reservation)
+
+    if reservation.from_library_id:
+        inter_lib_reservation = interLibReservationCreate(
+            reservation_id=db_reservation.id,
+            from_library_id=reservation.from_library_id,
+            status='pending',
+            logistic_status='pending'
+        )
+        create_inter_lib_reservation(db, inter_lib_reservation)
+
     return db_reservation
 
 
@@ -127,6 +145,19 @@ def cancel_reservation(db: Session, reservation_id: int):
     db_reservation.status = "cancelled"
     db.commit()
     db.refresh(db_reservation)
+
+    inter_lib_reservation = get_inter_lib_reservation_by_reservation_id(
+        db, reservation_id)
+    if inter_lib_reservation:
+        reservation = interLibReservationCreate(
+            reservation_id=reservation_id,
+            from_library_id=inter_lib_reservation.from_library_id,
+            status='cancelled',
+            logistic_status='cancelled'
+        )
+        update_inter_lib_reservation(
+            db, inter_lib_reservation.id, reservation)
+
     db_reservation.book_ids = db_reservation.book_ids.split(",")
     return db_reservation
 
@@ -179,6 +210,8 @@ def get_reservations_by_date_range(db: Session, start_date: str, end_date: str, 
     return reservations
 
 # need to make this endpoint a cronjob to run everyday at 8.00AM
+
+
 def expire_reservations(db: Session):
     from datetime import datetime
     now = datetime.now()
@@ -189,6 +222,17 @@ def expire_reservations(db: Session):
 
     for reservation in expired_reservations:
         reservation.status = "expired"
+        inter_lib_reservation = get_inter_lib_reservation_by_reservation_id(
+            db, reservation.id)
+        if inter_lib_reservation:
+            reservation = interLibReservationCreate(
+                reservation_id=reservation.id,
+                from_library_id=inter_lib_reservation.from_library_id,
+                status='expired',
+                logistic_status='expired'
+            )
+            update_inter_lib_reservation(
+                db, inter_lib_reservation.id, reservation)
 
     db.commit()
 
