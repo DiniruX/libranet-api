@@ -12,7 +12,7 @@ router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
 @router.post("/", response_model=Reservation)
 def save_reservation(reservation: ReservationCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    db_reservation = create_reservation(db, reservation)
+    db_reservation = create_reservation(db, reservation, current_user.id)
     db_reservation.book_ids = db_reservation.book_ids.split(
         ",")
     return db_reservation
@@ -45,12 +45,12 @@ def read_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db
 
 @router.put("/{reservation_id}", response_model=Reservation)
 def update_reservation(reservation_id: int, reservation: ReservationCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return update_reservation_controller(db, reservation_id, reservation)
+    return update_reservation_controller(db, reservation_id, reservation, current_user.id)
 
 
 @router.delete("/{reservation_id}")
 def delete_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return delete_reservation_controller(db, reservation_id)
+    return delete_reservation_controller(db, reservation_id, current_user.id)
 
 
 @router.get("/book/{book_id}", response_model=list[Reservation])
@@ -75,9 +75,9 @@ def read_reservations_by_status(status: str, db: Session = Depends(core.deps.get
 
 @router.put("/{reservation_id}/cancel", response_model=Reservation)
 def cancel_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return cancel_reservation_controller(db, reservation_id)
+    return cancel_reservation_controller(db, reservation_id, current_user.id)
 
 
 @router.put("/{reservation_id}/confirm", response_model=Reservation)
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return confirm_reservation_controller(db, reservation_id)
+    return confirm_reservation_controller(db, reservation_id, current_user.id)

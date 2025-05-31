@@ -27,7 +27,7 @@ def read_inter_lib_reservation(reservation_id: int, db: Session = Depends(core.d
 
 @router.put("/{reservation_id}", response_model=interLibReservation)
 def update_inter_lib_reservation_endpoint(reservation_id: int, reservation: interLibReservationCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
-    return update_inter_lib_reservation(db, reservation_id, reservation)
+    return update_inter_lib_reservation(db, reservation_id, reservation, current_user.id)
 
 
 @router.get("/reservation-id/{reservation_id}", response_model=interLibReservation)
