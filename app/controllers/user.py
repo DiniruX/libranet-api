@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, User as UserSchema
 from app.utils.security import hash_password, verify_password
 from app.core.jwt import create_access_token
 from app.controllers.actionLog import create_action_log
@@ -46,7 +46,7 @@ def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
 
-def update_user(db: Session, user_id: int, user: UserCreate, current_user_id: int):
+def update_user(db: Session, user_id: int, user: UserSchema, current_user_id: int):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(
@@ -70,6 +70,11 @@ def update_user(db: Session, user_id: int, user: UserCreate, current_user_id: in
 
 def delete_user(db: Session, user_id: int, current_user_id: int):
     db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
     if db_user:
         db.delete(db_user)
         db.commit()
