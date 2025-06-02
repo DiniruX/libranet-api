@@ -34,7 +34,7 @@ def read_user(user_id: int, db: Session = Depends(core.deps.get_db), current_use
 
 
 @router.put("/{user_id}", response_model=User)
-def update_user(user_id: int, user: UserCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+def update_user(user_id: int, user: User, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return update_user_controller(db, user_id, user, current_user.id)
 
 
