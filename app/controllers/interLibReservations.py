@@ -40,11 +40,6 @@ def get_inter_lib_reservation(db: Session, reservation_id: int):
 def get_inter_lib_reservation_by_reservation_id(db: Session, reservation_id: int):
     db_reservation = db.query(interLibReservation).filter(
         interLibReservation.reservation_id == reservation_id).first()
-    if not db_reservation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Inter-library reservation not found."
-        )
     return db_reservation
 
 # get by from_library_id
