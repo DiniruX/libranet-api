@@ -8,7 +8,7 @@ from app.core.deps import get_current_user
 from app.controllers.book import (
     create_book, get_books, get_book,
     update_book as update_book_controller,
-    delete_book as delete_book_controller
+    delete_book as delete_book_controller, get_books_by_library_id
 )
 
 router = APIRouter(prefix="/books", tags=["Books"])
@@ -28,6 +28,7 @@ async def save_book(
     cover_image: Optional[UploadFile] = File(None),
     db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)
 ):
+    print(f"Received cover_image: {cover_image}")
     cover_image_base64 = None
     if cover_image:
         image_bytes = await cover_image.read()
@@ -62,12 +63,19 @@ def read_book(book_id: int, db: Session = Depends(core.deps.get_db), current_use
         raise HTTPException(status_code=404, detail="Book not found")
     return db_book
 
+@router.get("/library/{library_id}", response_model=list[Book])
+def read_books_by_library(library_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+    return get_books_by_library_id(db, library_id, skip=skip, limit=limit)
 
 @router.put("/{book_id}", response_model=Book)
 async def update_book(
     book_id: int, title: str = Form(...),
     author: str = Form(...),
     isbn: str = Form(...),
+    genre: Optional[str] = Form(None),
+    status: str = Form("available"),
+    floor: Optional[int] = Form(None),
+    shelf: Optional[int] = Form(None),
     library_id: int = Form(...),
     description: Optional[str] = Form(None),
     cover_image: Optional[UploadFile] = File(None),
@@ -83,6 +91,10 @@ async def update_book(
         "title": title,
         "author": author,
         "isbn": isbn,
+        "genre": genre,
+        "status": status,
+        "floor": floor,
+        "shelf": shelf,
         "description": description,
         "library_id": library_id,
         "cover_image": cover_image_base64,

@@ -4,7 +4,7 @@ from app import core
 from app.schemas.fine import Fine, FineCreate
 from app.models.user import User as UserModel
 from app.core.deps import get_current_user
-from app.controllers.fine import create_fine, get_fines, get_fine, get_fines_by_reservation_id, get_fines_by_status, update_fine as update_fine_controller, delete_fine as delete_fine_controller, mark_fine_as_cancelled as mark_fine_as_cancelled_controller, mark_fine_as_paid as mark_fine_as_paid_controller, auto_update_fine_amount as auto_update_fine_amount_controller
+from app.controllers.fine import create_fine, get_fines, get_fine, get_fines_by_reservation_id, get_fines_by_status, update_fine as update_fine_controller, delete_fine as delete_fine_controller, mark_fine_as_cancelled as mark_fine_as_cancelled_controller, mark_fine_as_paid as mark_fine_as_paid_controller, auto_update_fine_amount as auto_update_fine_amount_controller, get_fines_by_lib_id
 
 router = APIRouter(prefix="/fines", tags=["Fines"])
 
@@ -25,6 +25,10 @@ def read_fine(fine_id: int, db: Session = Depends(core.deps.get_db), current_use
     if not db_fine:
         raise HTTPException(status_code=404, detail="Fine not found")
     return db_fine
+
+@router.get("/library/{lib_id}", response_model=list[Fine])
+def read_fines_by_library(lib_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+    return get_fines_by_lib_id(db, lib_id, skip=skip, limit=limit)
 
 
 @router.put("/auto-update")

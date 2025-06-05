@@ -47,6 +47,11 @@ def get_inter_lib_reservation_by_reservation_id(db: Session, reservation_id: int
         )
     return db_reservation
 
+# get by from_library_id
+def get_inter_lib_reservations_by_from_library_id(db: Session, from_library_id: int, skip: int = 0, limit: int = 100):
+    reservations = db.query(interLibReservation).filter(
+        interLibReservation.from_library_id == from_library_id).offset(skip).limit(limit).all()
+    return reservations
 
 def update_inter_lib_reservation(db: Session, reservation_id: int, reservation: interLibReservationCreate):
     db_reservation = db.query(interLibReservation).filter(

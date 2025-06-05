@@ -14,6 +14,6 @@ class Book(Base):
     floor = Column(Integer, nullable=True)  
     shelf = Column(Integer, nullable=True)
     library_id = Column(Integer, ForeignKey("libraries.id"), nullable=False)
-    description = Column(Text, nullable=True)
-    cover_image = Column(Text, nullable=True)
+    description = Column(String, nullable=True)
+    cover_image = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

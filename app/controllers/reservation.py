@@ -18,11 +18,12 @@ def create_reservation(db: Session, reservation: ReservationCreate, user_id: int
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A reservation for this user, library, and book(s) already exists."
         )
-    
+
     library_reservations = db.query(Reservation).filter(
         Reservation.library_id == reservation.library_id,
         Reservation.status.in_(["pending", "confirmed"]),
-        Reservation.reservation_from <= reservation.reservation_from
+        Reservation.reservation_from <= reservation.reservation_from,
+        Reservation.reservation_to >= reservation.reservation_from
     ).all()
     reserved_book_ids = set()
     for lib_reservation in library_reservations:
@@ -54,7 +55,7 @@ def create_reservation(db: Session, reservation: ReservationCreate, user_id: int
             logistic_status='pending'
         )
         create_inter_lib_reservation(db, inter_lib_reservation, user_id)
-    
+
     action_log = {
         "user_id": user_id,
         "action": f"Created reservation for user {reservation.user_id} at library {reservation.library_id} for books {', '.join(map(str, reservation.book_ids))}"
@@ -117,7 +118,7 @@ def delete_reservation(db: Session, reservation_id: int, user_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reservation not found."
         )
-    
+
     inter_lib_reservation = get_inter_lib_reservation_by_reservation_id(
         db, reservation_id)
     if inter_lib_reservation:
@@ -198,7 +199,6 @@ def cancel_reservation(db: Session, reservation_id: int, user_id: int):
         )
         update_inter_lib_reservation(
             db, inter_lib_reservation.id, reservation)
-
 
     action_log = {
         "user_id": user_id,
@@ -301,3 +301,26 @@ def expire_reservations(db: Session):
         reservation.book_ids = reservation.book_ids.split(",")
 
     return expired_reservations
+
+
+def get_books_in_reservations_between_dates(db: Session, res_from, res_to, skip: int = 0, limit: int = 100):
+    from sqlalchemy import and_, or_
+    reservations = db.query(Reservation).filter(
+        and_(
+        Reservation.reservation_from <= res_to,
+        Reservation.reservation_to >= res_from
+    )
+    ).offset(skip).limit(limit).all()
+
+    if not reservations:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No reservations found in the specified date range."
+        )
+
+    books = []
+    for reservation in reservations:
+        book_ids = reservation.book_ids.split(",")
+        books.extend(book_ids)
+
+    return list(set(books))

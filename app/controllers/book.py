@@ -28,6 +28,10 @@ def get_books(db: Session, skip: int = 0, limit: int = 100):
 def get_book(db: Session, book_id: int):
     return db.query(Book).filter(Book.id == book_id).first()
 
+def get_books_by_library_id(db: Session, library_id: int, skip: int = 0, limit: int = 100):
+    return db.query(Book).filter(Book.library_id == library_id).offset(skip).limit(limit).all() 
+
+
 def update_book(db: Session, book_id: int, book: dict, user_id: int):
     db_book = db.query(Book).filter(Book.id == book_id).first()
     if not db_book:
