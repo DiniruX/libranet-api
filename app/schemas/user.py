@@ -6,15 +6,14 @@ class UserBase(BaseModel):
     email: EmailStr
     role: str  # admin, staff, customer
     library_id: Optional[int] = None
+    hashed_password: str
 
 class UserCreate(UserBase):
-    password: str
     pass
 
 class User(UserBase):
     id: int
     is_active: bool
-    library_id: Optional[int]
 
     class Config:
         orm_mode = True

@@ -14,7 +14,7 @@ def create_user(db: Session, user: UserCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this email already exists."
         )
-    hashed_pw = hash_password(user.password)
+    hashed_pw = hash_password(user.hashed_password)
     db_user = User(
         name=user.name,
         email=user.email,
@@ -45,6 +45,8 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
+def get_users_by_library_id(db: Session, library_id: int, skip: int = 0, limit: int = 100):
+    return db.query(User).filter(User.library_id == library_id).offset(skip).limit(limit).all()
 
 def update_user(db: Session, user_id: int, user: UserSchema, current_user_id: int):
     db_user = db.query(User).filter(User.id == user_id).first()

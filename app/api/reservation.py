@@ -5,7 +5,7 @@ from app.schemas.reservation import Reservation, ReservationCreate
 from datetime import datetime
 from app.models.user import User as UserModel
 from app.core.deps import get_current_user
-from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller, expire_reservations
+from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller, expire_reservations, get_books_in_reservations_between_dates as get_books_in_reservations_between_dates_controller
 
 router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
@@ -71,6 +71,12 @@ def read_library_reservations(library_id: int, db: Session = Depends(core.deps.g
 @router.get("/status/{status}", response_model=list[Reservation])
 def read_reservations_by_status(status: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_reservations_by_status(db, status)
+
+@router.get("/books-in-reservations/{start_date}/{end_date}", response_model=list[int])
+def get_books_in_reservations_between_dates(start_date: str, end_date: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+    start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    return get_books_in_reservations_between_dates_controller(db, start_date_dt, end_date_dt)
 
 
 @router.put("/{reservation_id}/cancel", response_model=Reservation)

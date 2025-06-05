@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.models.fine import Fine
 from app.schemas.fine import FineCreate
+from app.models.reservation import Reservation
 from app.controllers.actionLog import create_action_log
 
 FIXED_FINE_AMOUNT_PER_DAY = 500
@@ -45,6 +46,19 @@ def get_fines_by_status(db: Session, status: str, skip: int = 0, limit: int = 10
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
 
     return db.query(Fine).filter(Fine.status == status).offset(skip).limit(limit).all()
+
+def get_fines_by_lib_id(db: Session, lib_id: str, skip: int = 0, limit: int = 100):
+    reservations = db.query(Reservation).filter(
+        Reservation.library_id == lib_id).offset(skip).limit(limit).all()
+    if not reservations:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No reservations found for this library") 
+    # Get all fines related to the reservations of the library
+    fines = db.query(Fine).filter(Fine.reservation_id.in_([res.id for res in reservations])).all()
+    if not fines:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No fines found for this library")
+    return fines
 
 def update_fine(db: Session, fine_id: int, fine_data: FineCreate, user_id: int):
     db_fine = db.query(Fine).filter(Fine.id == fine_id).first()
