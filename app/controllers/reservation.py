@@ -232,6 +232,49 @@ def confirm_reservation(db: Session, reservation_id: int, user_id: int):
     db_reservation.book_ids = db_reservation.book_ids.split(",")
     return db_reservation
 
+def checkout_reservation(db: Session, reservation_id: int, user_id: int):
+    db_reservation = db.query(Reservation).filter(
+        Reservation.id == reservation_id).first()
+    if not db_reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found."
+        )
+
+    db_reservation.status = "checked out"
+    db.commit()
+    db.refresh(db_reservation)
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"Checked out reservation {reservation_id} for user {db_reservation.user_id} at library {db_reservation.library_id}"
+    }
+    create_action_log(db, action_log)
+
+    db_reservation.book_ids = db_reservation.book_ids.split(",")
+    return db_reservation
+
+def borrow_reservation(db: Session, reservation_id: int, user_id: int):
+    db_reservation = db.query(Reservation).filter(
+        Reservation.id == reservation_id).first()
+    if not db_reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found."
+        )
+
+    db_reservation.status = "borrowed"
+    db.commit()
+    db.refresh(db_reservation)
+
+    action_log = {
+        "user_id": user_id,
+        "action": f"borrowed reservation {reservation_id} for user {db_reservation.user_id} at library {db_reservation.library_id}"
+    }
+    create_action_log(db, action_log)
+
+    db_reservation.book_ids = db_reservation.book_ids.split(",")
+    return db_reservation
 
 def get_reservations_by_status(db: Session, status: str, skip: int = 0, limit: int = 100):
     reservations = db.query(Reservation).filter(
@@ -272,7 +315,8 @@ def expire_reservations(db: Session):
     now = datetime.now()
     expired_reservations = db.query(Reservation).filter(
         Reservation.reservation_from < now,
-        Reservation.status != "expired"
+        Reservation.status != "expired",
+        Reservation.status != "checked out"
     ).all()
 
     for reservation in expired_reservations:

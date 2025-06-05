@@ -5,7 +5,7 @@ from app.schemas.reservation import Reservation, ReservationCreate
 from datetime import datetime
 from app.models.user import User as UserModel
 from app.core.deps import get_current_user
-from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller, expire_reservations, get_books_in_reservations_between_dates as get_books_in_reservations_between_dates_controller
+from app.controllers.reservation import create_reservation, get_reservations, get_reservation, update_reservation as update_reservation_controller, delete_reservation as delete_reservation_controller, get_book_reservations, get_user_reservations, get_library_reservations, get_reservations_by_date_range, get_reservations_by_status, cancel_reservation as cancel_reservation_controller, confirm_reservation as confirm_reservation_controller, expire_reservations, get_books_in_reservations_between_dates as get_books_in_reservations_between_dates_controller, checkout_reservation as checkout_reservation_controller, borrow_reservation as borrow_reservation_controller
 
 router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
@@ -87,3 +87,11 @@ def cancel_reservation(reservation_id: int, db: Session = Depends(core.deps.get_
 @router.put("/{reservation_id}/confirm", response_model=Reservation)
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return confirm_reservation_controller(db, reservation_id, current_user.id)
+
+@router.put("/{reservation_id}/checkout", response_model=Reservation)
+def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+    return checkout_reservation_controller(db, reservation_id, current_user.id)
+
+@router.put("/{reservation_id}/borrow", response_model=Reservation)
+def borrow_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
+    return borrow_reservation_controller(db, reservation_id, current_user.id)
