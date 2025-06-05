@@ -352,7 +352,9 @@ def get_books_in_reservations_between_dates(db: Session, res_from, res_to, skip:
     reservations = db.query(Reservation).filter(
         and_(
         Reservation.reservation_from <= res_to,
-        Reservation.reservation_to >= res_from
+        Reservation.reservation_to >= res_from,
+        Reservation.status != "cancelled",
+        Reservation.status != "expired",
     )
     ).offset(skip).limit(limit).all()
 
