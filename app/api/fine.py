@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import core
+from typing import List
 from app.schemas.fine import Fine, FineCreate
 from app.models.user import User as UserModel
 from app.core.deps import get_current_user
@@ -14,7 +15,7 @@ def save_fine(fine: FineCreate, db: Session = Depends(core.deps.get_db), current
     return create_fine(db, fine, current_user.id)
 
 
-@router.get("/", response_model=list[Fine])
+@router.get("/", response_model=List[Fine])
 def read_fines(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_fines(db, skip=skip, limit=limit)
 
@@ -26,7 +27,7 @@ def read_fine(fine_id: int, db: Session = Depends(core.deps.get_db), current_use
         raise HTTPException(status_code=404, detail="Fine not found")
     return db_fine
 
-@router.get("/library/{lib_id}", response_model=list[Fine])
+@router.get("/library/{lib_id}", response_model=List[Fine])
 def read_fines_by_library(lib_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_fines_by_lib_id(db, lib_id, skip=skip, limit=limit)
 
@@ -36,12 +37,12 @@ def auto_update_fine_amount(db: Session = Depends(core.deps.get_db), current_use
     return auto_update_fine_amount_controller(db)
 
 
-@router.get("/reservation/{reservation_id}", response_model=list[Fine])
+@router.get("/reservation/{reservation_id}", response_model=List[Fine])
 def read_fines_by_reservation_id(reservation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_fines_by_reservation_id(db, reservation_id, skip=skip, limit=limit)
 
 
-@router.get("/status/{status}", response_model=list[Fine])
+@router.get("/status/{status}", response_model=List[Fine])
 def read_fines_by_status(status: str, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_fines_by_status(db, status, skip=skip, limit=limit)
 

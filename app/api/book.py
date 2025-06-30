@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app import core
+from typing import List
 from app.schemas.book import Book, BookCreate
 from typing import Optional
 from app.models.user import User as UserModel
@@ -51,7 +52,7 @@ async def save_book(
     return create_book(db, book_data, current_user.id)
 
 
-@router.get("/", response_model=list[Book])
+@router.get("/", response_model=List[Book])
 def read_books(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_books(db, skip=skip, limit=limit)
 
@@ -63,7 +64,7 @@ def read_book(book_id: int, db: Session = Depends(core.deps.get_db), current_use
         raise HTTPException(status_code=404, detail="Book not found")
     return db_book
 
-@router.get("/library/{library_id}", response_model=list[Book])
+@router.get("/library/{library_id}", response_model=List[Book])
 def read_books_by_library(library_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_books_by_library_id(db, library_id, skip=skip, limit=limit)
 

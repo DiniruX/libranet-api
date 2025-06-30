@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from app import core
 from app.schemas.library import Library, LibraryCreate
 from app.models.user import User as UserModel
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/libraries", tags=["Libraries"])
 def save_library(library: LibraryCreate, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return create_library(db, library, current_user.id)
 
-@router.get("/", response_model=list[Library])
+@router.get("/", response_model=List[Library])
 def read_libraries(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_libraries(db, skip=skip, limit=limit)
 

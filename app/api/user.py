@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import core
+from typing import List
 from app.schemas.user import User, UserCreate
 from app.schemas.auth import LoginRequest
 from app.models.user import User as UserModel
@@ -20,7 +21,7 @@ def login(payload: LoginRequest, db: Session = Depends(core.deps.get_db)):
     return user_login(db, email=payload.email, password=payload.password)
 
 
-@router.get("/", response_model=list[User])
+@router.get("/", response_model=List[User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_users(db, skip=skip, limit=limit)
 
@@ -32,7 +33,7 @@ def read_user(user_id: int, db: Session = Depends(core.deps.get_db), current_use
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@router.get("/library/{library_id}", response_model=list[User])
+@router.get("/library/{library_id}", response_model=List[User])
 def read_users_by_library(library_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_users_by_library_id(db, library_id, skip=skip, limit=limit)
 
