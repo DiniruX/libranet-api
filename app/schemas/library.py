@@ -16,5 +16,14 @@ class Library(LibraryBase):
     id: int
     created_at: datetime
 
+class LibraryOut(LibraryBase):
+    id: int
+    name: str
+    city: str
+    address: str
+    location: str
+    contact: Optional[str] = None
+    created_at: datetime
+
     class Config:
         orm_mode = True

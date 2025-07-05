@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import core
+from typing import List
 from app.schemas.reservation import Reservation, ReservationCreate
 from datetime import datetime
 from app.models.user import User as UserModel
@@ -18,19 +19,19 @@ def save_reservation(reservation: ReservationCreate, db: Session = Depends(core.
     return db_reservation
 
 
-@router.get("/date-range", response_model=list[Reservation])
+@router.get("/date-range", response_model=List[Reservation])
 def read_reservations_by_date_range(start_date: str, end_date: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
     end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
     return get_reservations_by_date_range(db, start_date_dt, end_date_dt)
 
 
-@router.put("/expire", response_model=list[Reservation])
+@router.put("/expire", response_model=List[Reservation])
 def expire_reservations_endpoint(db: Session = Depends(core.deps.get_db)):
     return expire_reservations(db)
 
 
-@router.get("/", response_model=list[Reservation])
+@router.get("/", response_model=List[Reservation])
 def read_reservations(skip: int = 0, limit: int = 100, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_reservations(db, skip=skip, limit=limit)
 
@@ -53,26 +54,27 @@ def delete_reservation(reservation_id: int, db: Session = Depends(core.deps.get_
     return delete_reservation_controller(db, reservation_id, current_user.id)
 
 
-@router.get("/book/{book_id}", response_model=list[Reservation])
+@router.get("/book/{book_id}", response_model=List[Reservation])
 def read_book_reservations(book_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_book_reservations(db, book_id)
 
 
-@router.get("/user/{user_id}", response_model=list[Reservation])
+@router.get("/user/{user_id}", response_model=List[Reservation])
 def read_user_reservations(user_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_user_reservations(db, user_id)
 
 
-@router.get("/library/{library_id}", response_model=list[Reservation])
+@router.get("/library/{library_id}", response_model=List[Reservation])
 def read_library_reservations(library_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_library_reservations(db, library_id)
 
 
-@router.get("/status/{status}", response_model=list[Reservation])
+@router.get("/status/{status}", response_model=List[Reservation])
 def read_reservations_by_status(status: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_reservations_by_status(db, status)
 
-@router.get("/books-in-reservations/{start_date}/{end_date}", response_model=list[int])
+
+@router.get("/books-in-reservations/{start_date}/{end_date}", response_model=List[int])
 def get_books_in_reservations_between_dates(start_date: str, end_date: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
     end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
@@ -88,9 +90,11 @@ def cancel_reservation(reservation_id: int, db: Session = Depends(core.deps.get_
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return confirm_reservation_controller(db, reservation_id, current_user.id)
 
+
 @router.put("/{reservation_id}/checkout", response_model=Reservation)
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return checkout_reservation_controller(db, reservation_id, current_user.id)
+
 
 @router.put("/{reservation_id}/borrow", response_model=Reservation)
 def borrow_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):

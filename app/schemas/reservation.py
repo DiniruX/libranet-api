@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class ReservationBase(BaseModel):
@@ -7,7 +7,7 @@ class ReservationBase(BaseModel):
     user_id: int
     reservation_from: datetime
     reservation_to: datetime
-    book_ids: list[int] 
+    book_ids: List[int] 
     status: str 
     from_library_id: Optional[int] = None  # For inter-library reservations
 
