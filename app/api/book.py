@@ -29,7 +29,6 @@ async def save_book(
     cover_image: Optional[UploadFile] = File(None),
     db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)
 ):
-    print(f"Received cover_image: {cover_image}")
     cover_image_base64 = None
     if cover_image:
         image_bytes = await cover_image.read()
