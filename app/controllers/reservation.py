@@ -68,7 +68,7 @@ def create_reservation(db: Session, reservation: ReservationCreate, user_id: int
 def get_reservations(db: Session, skip: int = 0, limit: int = 100):
     reservations = db.query(Reservation).offset(skip).limit(limit).all()
     for reservation in reservations:
-        reservation.book_ids = reservation.book_ids.split(",")
+        reservation.book_ids = [int(bid.strip()) for bid in reservation.book_ids.split(",")]
 
     return reservations
 
@@ -95,6 +95,8 @@ def update_reservation(db: Session, reservation_id: int, reservation: Reservatio
         )
 
     for key, value in reservation.dict().items():
+        if key == "book_ids":
+            value = ",".join(str(bid) for bid in value)  # Convert list[int] → "2,5"
         setattr(db_reservation, key, value)
 
     db.commit()

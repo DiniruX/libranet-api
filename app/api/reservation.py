@@ -73,6 +73,7 @@ def read_library_reservations(library_id: int, db: Session = Depends(core.deps.g
 def read_reservations_by_status(status: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return get_reservations_by_status(db, status)
 
+
 @router.get("/books-in-reservations/{start_date}/{end_date}", response_model=List[int])
 def get_books_in_reservations_between_dates(start_date: str, end_date: str, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -89,9 +90,11 @@ def cancel_reservation(reservation_id: int, db: Session = Depends(core.deps.get_
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return confirm_reservation_controller(db, reservation_id, current_user.id)
 
+
 @router.put("/{reservation_id}/checkout", response_model=Reservation)
 def confirm_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
     return checkout_reservation_controller(db, reservation_id, current_user.id)
+
 
 @router.put("/{reservation_id}/borrow", response_model=Reservation)
 def borrow_reservation(reservation_id: int, db: Session = Depends(core.deps.get_db), current_user: UserModel = Depends(get_current_user)):
